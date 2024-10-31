@@ -1,18 +1,21 @@
+import warnings
 from requests import get, post, put, delete as delet
-from dotenv import load_dotenv
-# from os import environ
 
-# load_dotenv()
-# api_url = environ.get('API_URL') + '/api/v1/'
 
-class Base:
-    # params = eval(get(api_url + 'params').text)
+class BaseClass:
+    __params = []
 
-    def __init__(self, user_id, api_key):
+    def __new__(cls, user_id, api_key, api_url):
+        if not cls.__params:
+            cls.__params = get(api_url + 'params').json() + ['tunnels']
+        self = super().__new__(cls)
+        return self
+
+    def __init__(self, user_id, api_key, api_url):
         self.headers = {"Authorization": f"Bearer {api_key}"}
         self.player_id = str(user_id)
-        self.get_url = f"{api_url}{self.__class__.__name__}/{user_id}/"
-        self.post_url = f"{api_url}{self.__class__.__name__}"
+        self.get_url = f"{api_url}{self.__class__.__name__.replace('__', '')}/{user_id}/"
+        self.post_url = f"{api_url}{self.__class__.__name__.replace('__', '')}"
 
     def __getitem__(self, name):
         return self.__get(name)
@@ -30,88 +33,66 @@ class Base:
         put(self.post_url, json=values, headers=self.headers)
 
     def get(self, values: str):
-        return eval(get(self.get_url + values, headers=self.headers).text)
+        return get(self.get_url + values, headers=self.headers).json()
 
     def __set(self, name, value):
-        if self.params is None and name in eval(get(api_url + 'params').text) or name in self.params:
-            if self.__class__.__name__ == 'Player':
-                put(self.post_url, headers=self.headers, json={'telegram_id': self.player_id, name: value})
-            else:
-                put(self.post_url, headers=self.headers, json={'owner_id': str(self.player_id), name: value})
-        self.__dict__[name] = value
+        if name in self.__params:
+            data = {'owner_id': str(self.player_id), name: value}
+            if self.__class__.__name__ == '__Player':
+                data['telegram_id'], data['owner_id'] = self.player_id, None
+            put(self.post_url, headers=self.headers, json=data)
+        else:
+            self.__dict__[name] = value
 
     def __get(self, name):
-        if self.params is None and name in eval(get(api_url + 'params').text) or name in self.params:
-            return eval(get(self.get_url + name, headers=self.headers).text)[0]
+        if name in self.__params:
+            return get(self.get_url + name, headers=self.headers).json()[0]
         elif name in self.__dict__:
             return self.__dict__[name]
 
 
 class SinApi:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.headers = {"Authorization": f"Bearer {self.api_key}"}
+    def __init__(self, api_key, api_url):
+        self.__api_key = api_key
+        self.__headers = {"Authorization": f"Bearer {self.__api_key}"}
+        self.__api_url = api_url
+
+    def mine(self, user_id):
+        return self.__Mine(user_id, self.__api_key, self.__api_url)
 
     def player(self, user_id):
-        """
-        player = api.player(id)
-        player = api.player(vk_id)
-        player.global_change({
-        'telegram_id': self.player_id,
-        'значение для изменения', значение,
-        'значение для изменения', значение,
-        ...
-        })
-        """
-        return self.Player(user_id, self.api_key)
+        return self.__Player(user_id, self.__api_key, self.__api_url)
 
     def factory(self, owner_id):
-        """
-        factory = api.factory(id пользователя)
-
-        получаем значения из бд
-        factory.name или factory.get('name')
-        получаем список значений factory.get('name,workers') -> [name, workers]
-
-        изменяем данные
-        factory.name = ''
-        или
-        factory.global_change({
-        'owner_id': id пользователя,
-        'значение для изменения', значение,
-        'значение для изменения', значение,
-        ...
-    })
-        """
-        return self.Factory(owner_id, self.api_key)
+        return self.__Factory(owner_id, self.__api_key, self.__api_url)
 
     def find_factory(self, name):
-        req = get(f'{api_url}findFactory/{name}',
-                  headers=self.headers).text
+        req = get(f'{self.__api_url}findFactory/{name}',
+                  headers=self.__headers).text
         return self.factory(req) if req != '0' else req
 
     def stock(self):
-        return eval(get(f'{api_url}stock',
-                        headers=self.headers).text)[0]
+        return get(f'{self.__api_url}stock',
+                   headers=self.__headers).json()[0]
 
     def league_update(self):
-        post(f'{api_url}leagueUpdate', headers=self.headers,
+        post(f'{self.__api_url}leagueUpdate', headers=self.__headers,
              allow_redirects=True)
 
     def lottery_start(self):
-        return eval(get(f'{api_url}startLottery', headers=self.headers).text)
+        return get(f'{self.__api_url}startLottery', headers=self.__headers).json()
 
     def reset_tickets(self):
-        post(f'{api_url}resetTickets', headers=self.headers)
+        post(f'{self.__api_url}resetTickets', headers=self.__headers)
 
-    class Player(Base):
-        def __init__(self, user_id, api_key):
+    class __Player(BaseClass):
+        def __init__(self, user_id, api_key, api_url):
             try:
                 int(user_id)
             except:
                 user_id = get(f'{api_url}findUser/{user_id.replace('@', '')}',
                               headers={"Authorization": f"Bearer {api_key}"}).text
-            super().__init__(user_id, api_key)
+            super().__init__(user_id, api_key, api_url)
 
         def __str__(self):
             user_data = self.get('name,money,stolar,rating,league,clan_name,id,titles')
@@ -142,8 +123,7 @@ class SinApi:
         @property
         def exist(self) -> bool:
             try:
-                if self.telegram_id == int(self.player_id):
-                    return True
+                return self.telegram_id == int(self.player_id)
             except:
                 pass
             return False
@@ -152,13 +132,10 @@ class SinApi:
         def is_banned(self) -> bool:
             return False
 
-    class Factory(Base):
-        def __init__(self, user_id, api_key):
-            super().__init__(user_id, api_key)
+    class __Factory(BaseClass):
 
         def __str__(self):
-            factory_data = eval(get(self.get_url + 'name,lvl,state,tax,workers,ecology,stock,verification',
-                                    headers=self.headers).text)
+            factory_data = self.get('name,lvl,state,tax,workers,ecology,stock,verification')
             return f"""
 🏭 *{factory_data[0].replace('_', ' ')}*
 🔧 *Уровень:* {factory_data[1]}
@@ -191,8 +168,7 @@ class SinApi:
         def exist(self) -> bool:
             try:
                 req = get(self.get_url + 'owner_id', headers=self.headers)
-                if req.status_code != 404:
-                    return True
+                return req.status_code != 404
             except:
                 pass
             return False
@@ -204,4 +180,45 @@ class SinApi:
             delet(self.post_url, headers=self.headers, params={'owner_id': self.owner_id})
 
         def exists(self) -> bool:
+            warnings.warn('This are going to be deleted, and replaced with __Factory.exist',
+                          PendingDeprecationWarning, stacklevel=2)
             return self.exist
+
+    class __Mine(BaseClass):
+
+        def __str__(self):
+            data = self.get('name,lvl,tax')
+            return f"""
+Шахта *{data[0]}*
+
+*Размер:* {data[1]}
+*Налоги:* {data[2]:,}
+
+Выберите действие:
+    """
+
+        def create(self, name: str):
+            post(self.post_url, headers=self.headers,
+                 json={"owner_id": self.player_id, 'name': name})
+
+        @property
+        def exist(self):
+            try:
+                return self.owner_id == int(self.player_id)
+            except:
+                pass
+            return False
+
+        class Tunnel(BaseClass):
+
+            def __str__(self):
+                mine_id, tunnel_id, lvl, workers, eq, work = self.get('mine_id,id,lvl,workers,equipment,working')
+                return f"""
+Туннель № {f'{(mine_id - 100000) * tunnel_id:,}'.replace(',', '-')}
+_Внутренний номер {tunnel_id:,}_
+
+Работа: {'Приостановлена' if work == 0 else 'Идет полным ходом'}
+
+Глубина: {lvl} километров.
+Рабочие: {workers} человек.
+"""

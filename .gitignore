@@ -1,0 +1,6 @@
+.venv/
+.idea
+sinAPI.egg-info
+.pypirc
+build/
+dist/
