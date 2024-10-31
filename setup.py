@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sinAPI",
-    version="0.2.0",
+    version="0.2.1",
     author="sinortax",
     description="Интерфейс связи ботов Tegtory с апи",
     long_description=open("README.md", encoding="utf-8").read(),
