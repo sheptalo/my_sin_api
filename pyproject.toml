@@ -1,0 +1,22 @@
+[project]
+name = "sinAPI"
+version = '0.2.1'
+dependencies=["requests>=2.26.0"]
+requires-python = ">= 3.8"
+authors = [
+  {name = "sinortax", email = "github@sinortax.ru"},
+]
+maintainers = [
+    {name = "sinortax", email = "github@sinortax.ru"},
+]
+description="Интерфейс связи ботов Tegtory с апи"
+readme = "README.md"
+license = {text = "MIT License"}
+classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ]
+[project.urls]
+Repository  = "https://github.com/sheptalo/my_sin_api"
