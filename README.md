@@ -4,21 +4,41 @@
 [![pypi](https://img.shields.io/pypi/status/sinAPI.svg?style=flat-square)](https://pypi.org/project/sinAPI/#description)
 ![python versions](https://img.shields.io/pypi/pyversions/aiogram.svg?style=flat-square)
 
-## RU
-апи интерфейс для вазимодействия ботов семейства Tegtory
+## Install
 
-Не рекомендую к установке, использованию если не знаешь для чего он тебе
+```Bash
+$ pip install sinAPI
+```
+
+## RU
+
+класс интерфейс для связи с апи REST,
+
+На данный момент иидеально работает только с ботами семьи Tegtory
+
 
 ## EN
 
-api interface for Tegtory family bots
+class interface to act with REST API's
 
-dont use if you wont know how
+for now only work with Tegtory bots.
 
-## usage
+To get know how to create class open ```_models.py```
+
+## Examples
+
+[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=sheptalo&repo=Tegtory&theme=dark)](https://github.com/sheptalo/Tegtory)
+
+## Usage
 
 ```python
 from my_sin_api import SinApi
 
-api = SinApi('YOUR API TOKEN')
+api = SinApi('YOUR API TOKEN', 'http://API.URL/')
+
+item = api.any('NAME OF NEEDED ITEM', 'ID OF NEEDED ITEM')
+print(item.name)
+# eq
+# requests.get('http://API.URL/NAME OF NEEDED ITEM/ID OF NEEDED ITEM',
+#              headers={'Authorization': "YOUR API TOKEN"})
 ```
