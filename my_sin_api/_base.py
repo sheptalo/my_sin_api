@@ -37,7 +37,7 @@ class BaseClass:
     def __set(self, name, value):
         if name in self.__params:
             data = {'owner_id': str(self.player_id), name: value}
-            if self.__class__.__name__ == '__Player':
+            if self.__class__.__name__ == 'Player':
                 data['telegram_id'], data['owner_id'] = self.player_id, None
             put(self.post_url, headers=self.headers, json=data)
         else:

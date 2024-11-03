@@ -1,6 +1,6 @@
 [project]
 name = "sinAPI"
-version = '0.2.2'
+version = '0.2.2.1'
 dependencies=["requests>=2.26.0"]
 requires-python = ">= 3.8"
 authors = [
