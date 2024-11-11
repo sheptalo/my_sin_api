@@ -49,13 +49,13 @@ class Player(Tegtory):
 
     async def create(self, username: str, user: str):
         post(self.post_url, headers=self.headers,
-             json={"telegram_id": self.uid, 'username': username,
+             json={"telegram_id": self.player_id, 'username': username,
                    'user': user})
 
     @property
     def exist(self) -> bool:
         try:
-            return self.telegram_id == int(self.uid)
+            return self.telegram_id == int(self.player_id)
         except:
             pass
         return False
@@ -109,7 +109,7 @@ class Factory(Tegtory):
 
     def create(self, name: str):
         post(self.post_url, headers=self.headers,
-             json={'owner_id': self.uid, 'name': name})
+             json={'owner_id': self.player_id, 'name': name})
 
     def delete(self):
         delet(self.post_url, headers=self.headers,
@@ -137,12 +137,12 @@ class Mine(BaseClass):
 
     def create(self, name: str):
         post(self.post_url, headers=self.headers,
-             json={"owner_id": self.uid, 'name': name})
+             json={"owner_id": self.player_id, 'name': name})
 
     @property
     def exist(self):
         try:
-            return self.owner_id == int(self.uid)
+            return self.owner_id == int(self.player_id)
         except:
             pass
         return False
