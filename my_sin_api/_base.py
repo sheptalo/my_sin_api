@@ -4,10 +4,10 @@ from requests import get, put
 class BaseClass:
 
     def __init__(self, user_id, api_key, api_url):
-        self.headers = {"Authorization": f"Bearer {api_key}"}
-        self.uid = str(user_id)
-        self.get_url = f"{api_url}{self.__class__.__name__}/{user_id}/"
-        self.post_url = f"{api_url}{self.__class__.__name__}"
+        self.__dict__['headers'] = {"Authorization": f"Bearer {api_key}"}
+        self.__dict__['uid'] = str(user_id)
+        self.__dict__['get_url'] = f"{api_url}{self.__class__.__name__}/{user_id}/"
+        self.__dict__['post_url'] = f"{api_url}{self.__class__.__name__}"
 
     def __getitem__(self, name):
         return self.__get(name)
@@ -28,13 +28,10 @@ class BaseClass:
         return get(self.get_url + values, headers=self.headers).json()
 
     def __set(self, name, value):
-        if name in self.__params:
-            put(self.get_url, headers=self.headers, json={name: value})
-        else:
-            self.__dict__[name] = value
+        put(self.get_url, headers=self.headers, json={name: value})
 
     def __get(self, name):
-        if name in self.__params:
+        if name not in self.__dict__.keys():
             return get(self.get_url + name, headers=self.headers).json()[0]
         elif name in self.__dict__:
             return self.__dict__[name]
