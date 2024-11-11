@@ -5,7 +5,7 @@ class BaseClass:
 
     def __init__(self, user_id, api_key, api_url):
         self.__dict__['headers'] = {"Authorization": f"Bearer {api_key}"}
-        self.__dict__['uid'] = str(user_id)
+        self.__dict__['player_id'] = str(user_id)
         self.__dict__['get_url'] = f"{api_url}{self.__class__.__name__}/{user_id}/"
         self.__dict__['post_url'] = f"{api_url}{self.__class__.__name__}"
 
