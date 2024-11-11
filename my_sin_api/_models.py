@@ -5,7 +5,17 @@ from requests import get, post, delete as delet
 from my_sin_api._base import BaseClass
 
 
-class Player(BaseClass):
+class Tegtory(BaseClass):
+    __params = []
+
+    def __new__(cls, user_id, api_key, api_url):
+        if not cls.__params:
+            cls.__params = get(api_url + 'params').json()
+        self = super().__new__(cls)
+        return self
+
+
+class Player(Tegtory):
     def __init__(self, user_id, api_key, api_url):
         try:
             int(user_id)
@@ -15,7 +25,8 @@ class Player(BaseClass):
         super().__init__(user_id, api_key, api_url)
 
     def __str__(self):
-        user_data = self.get('name,money,stolar,rating,league,clan_name,id,titles')
+        user_data = self.get(
+            'name,money,stolar,rating,league,clan_name,id,titles')
         _text = f"""
 🌟*{user_data[0]}*🌟
 
@@ -38,12 +49,13 @@ class Player(BaseClass):
 
     async def create(self, username: str, user: str):
         post(self.post_url, headers=self.headers,
-             json={"telegram_id": self.player_id, 'username': username, 'user': user})
+             json={"telegram_id": self.uid, 'username': username,
+                   'user': user})
 
     @property
     def exist(self) -> bool:
         try:
-            return self.telegram_id == int(self.player_id)
+            return self.telegram_id == int(self.uid)
         except:
             pass
         return False
@@ -53,10 +65,11 @@ class Player(BaseClass):
         return False
 
 
-class Factory(BaseClass):
+class Factory(Tegtory):
 
     def __str__(self):
-        factory_data = self.get('name,lvl,state,tax,workers,ecology,stock,verification')
+        factory_data = self.get(
+            'name,lvl,state,tax,workers,ecology,stock,verification')
         return f"""
 🏭 *{factory_data[0].replace('_', ' ')}*
 🔧 *Уровень:* {factory_data[1]}
@@ -67,7 +80,7 @@ class Factory(BaseClass):
 ♻️ *Вклад в экологию:* {factory_data[5]}
 📦 *Товара на складе:* {factory_data[6]}
 {'🔎 _Знак качества_' if factory_data[7] == 1 else ''}
-                        """
+"""
 
     @property
     def type(self):
@@ -95,14 +108,17 @@ class Factory(BaseClass):
         return False
 
     def create(self, name: str):
-        post(self.post_url, headers=self.headers, json={'owner_id': self.player_id, 'name': name})
+        post(self.post_url, headers=self.headers,
+             json={'owner_id': self.uid, 'name': name})
 
     def delete(self):
-        delet(self.post_url, headers=self.headers, params={'owner_id': self.owner_id})
+        delet(self.post_url, headers=self.headers,
+              params={'owner_id': self.owner_id})
 
     def exists(self) -> bool:
-        warnings.warn('This are going to be deleted, and replaced with __Factory.exist',
-                      PendingDeprecationWarning, stacklevel=2)
+        warnings.warn(
+            'This are going to be deleted, and replaced with .exist',
+            PendingDeprecationWarning, stacklevel=2)
         return self.exist
 
 
@@ -121,12 +137,12 @@ class Mine(BaseClass):
 
     def create(self, name: str):
         post(self.post_url, headers=self.headers,
-             json={"owner_id": self.player_id, 'name': name})
+             json={"owner_id": self.uid, 'name': name})
 
     @property
     def exist(self):
         try:
-            return self.owner_id == int(self.player_id)
+            return self.owner_id == int(self.uid)
         except:
             pass
         return False
@@ -135,7 +151,8 @@ class Mine(BaseClass):
 class Tunnel(BaseClass):
 
     def __str__(self):
-        mine_id, tunnel_id, lvl, workers, eq, work = self.get('mine_id,id,lvl,workers,equipment,working')
+        mine_id, tunnel_id, lvl, workers, eq, work = self.get(
+            'mine_id,id,lvl,workers,equipment,working')
         return f"""
 Туннель № {f'{(mine_id - 100000) * tunnel_id:,}'.replace(',', '-')}
 _Внутренний номер {tunnel_id:,}_
