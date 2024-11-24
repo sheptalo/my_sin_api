@@ -50,7 +50,7 @@ class Player(Tegtory):
     async def create(self, username: str, user: str):
         post(self.post_url, headers=self.headers,
              json={"telegram_id": self.player_id, 'username': username,
-                   'user': user})
+                   'name': user})
 
     @property
     def exist(self) -> bool:
