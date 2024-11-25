@@ -1,13 +1,17 @@
-from requests import get, put
+from requests.sessions import Session
 
 
 class BaseClass:
-
-    def __init__(self, user_id, api_key, api_url):
-        self.__dict__['headers'] = {"Authorization": f"Bearer {api_key}"}
-        self.__dict__['player_id'] = str(user_id)
-        self.__dict__['get_url'] = f"{api_url}{self.__class__.__name__}/{user_id}/"
-        self.__dict__['post_url'] = f"{api_url}{self.__class__.__name__}"
+    def __init__(self, user_id, api_key, api_url, ssl_verify):
+        self.__dict__["player_id"] = str(user_id)
+        self.__dict__["get_url"] = (
+            f"{api_url}{self.__class__.__name__}/{user_id}/"
+        )
+        self.__dict__["post_url"] = f"{api_url}{self.__class__.__name__}"
+        session = Session()
+        session.headers.update({"Authorization": f"Bearer {api_key}"})
+        session.verify = ssl_verify
+        self.__dict__["session"] = session
 
     def __getitem__(self, name):
         return self.__get(name)
@@ -22,16 +26,13 @@ class BaseClass:
         self.__set(name, value)
 
     def set(self, values: dict):
-        put(self.get_url, json=values, headers=self.headers)
+        self.session.put(self.get_url, json=values)
 
     def get(self, values: str):
-        return get(self.get_url + values, headers=self.headers).json()
+        return self.session.get(self.get_url + values).json()
 
     def __set(self, name, value):
-        put(self.get_url, headers=self.headers, json={name: value})
+        self.session.put(self.get_url, json={name: value})
 
     def __get(self, name):
-        if name not in self.__dict__.keys():
-            return get(self.get_url + name, headers=self.headers).json()[0]
-        elif name in self.__dict__:
-            return self.__dict__[name]
+        return self.session.get(self.get_url + name).json()[0]

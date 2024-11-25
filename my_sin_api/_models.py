@@ -1,37 +1,54 @@
-import warnings
-
-from requests import get, post, delete as delet
-
+from requests import get
 from my_sin_api._base import BaseClass
 
 
 class Tegtory(BaseClass):
     __params = []
 
-    def __new__(cls, user_id, api_key, api_url):
+    def __new__(cls, user_id, api_key, api_url, ssl_verify):
         if not cls.__params:
-            cls.__params = get(api_url + 'params').json()
+            cls.__params = get(api_url + "params", verify=ssl_verify).json()
         self = super().__new__(cls)
         return self
 
+    def __init__(self, user_id, api_key, api_url, ssl_verify):
+        super().__init__(user_id, api_key, api_url, ssl_verify)
+        self.__dict__["api_url"] = api_url
+
+    def get_stock(self):
+        return self.session.get(f"{self.api_url}stock").json()[0]
+
+    def league_update(self):
+        self.session.post(f"{self.api_url}leagueUpdate", allow_redirects=True)
+
+    def lottery_start(self):
+        return self.session.get(f"{self.api_url}startLottery").json()
+
+    def reset_tickets(self):
+        self.session.post(f"{self.api_url}resetTickets")
+
 
 class Player(Tegtory):
-    def __init__(self, user_id, api_key, api_url):
+    def __init__(self, user_id, api_key, api_url, ssl_verify):
         try:
             int(user_id)
         except:
-            user_id = get(f'{api_url}findUser/{user_id.replace('@', '')}',
-                          headers={"Authorization": f"Bearer {api_key}"}).text
-        super().__init__(user_id, api_key, api_url)
+            user_id = get(
+                f'{api_url}findUser/{user_id.replace('@', '')}',
+                headers={"Authorization": f"Bearer {api_key}"},
+                verify=ssl_verify,
+            ).text
+        super().__init__(user_id, api_key, api_url, ssl_verify)
 
     def __str__(self):
         user_data = self.get(
-            'name,money,stolar,rating,league,clan_name,id,titles')
+            "name,money,stolar,rating,league,clan_name,id,titles"
+        )
         _text = f"""
 🌟*{user_data[0]}*🌟
 
 💲 *Баланс:* {user_data[1]:,}
-⚔️ *Столар:* {user_data[2]:,}
+⚔️ *SC:* {user_data[2]:,}
 
 🏆 *Рейтинг:* {user_data[3]:,}
 🛡️ *Лига:* {user_data[4]}
@@ -42,15 +59,20 @@ class Player(Tegtory):
                 """
         title = user_data[7]
         if title:
-            _text += f'\n\n🏆 *Титулы:* \n'
+            _text += "\n\n🏆 *Титулы:* \n"
             for name in title.split():
                 _text += f"- {name.replace('_', ' ')}\n"
         return _text
 
     async def create(self, username: str, user: str):
-        post(self.post_url, headers=self.headers,
-             json={"telegram_id": self.player_id, 'username': username,
-                   'name': user})
+        self.session.post(
+            self.post_url,
+            json={
+                "telegram_id": self.player_id,
+                "username": username,
+                "name": user,
+            },
+        )
 
     @property
     def exist(self) -> bool:
@@ -66,10 +88,10 @@ class Player(Tegtory):
 
 
 class Factory(Tegtory):
-
     def __str__(self):
         factory_data = self.get(
-            'name,lvl,state,tax,workers,ecology,stock,verification')
+            "name,lvl,state,tax,workers,ecology,stock,verification"
+        )
         return f"""
 🏭 *{factory_data[0].replace('_', ' ')}*
 🔧 *Уровень:* {factory_data[1]}
@@ -86,79 +108,31 @@ class Factory(Tegtory):
     def type(self):
         lvl = self.lvl
         if lvl >= 1000:
-            return 'Звездная энергия'
+            return "Звездная энергия"
         elif lvl >= 500:
-            return 'Атомная энергия'
+            return "Атомная энергия"
         elif lvl >= 100:
-            return 'Солнечная энергия'
+            return "Солнечная энергия"
         elif lvl >= 50:
-            return 'Химикаты'
+            return "Химикаты"
         elif lvl >= 10:
-            return 'Железо'
+            return "Железо"
         else:
-            return 'Древесина'
+            return "Древесина"
 
     @property
     def exist(self) -> bool:
         try:
-            req = get(self.get_url + 'owner_id', headers=self.headers)
+            req = self.session.get(self.get_url + "owner_id")
             return req.status_code != 404
         except:
             pass
         return False
 
     def create(self, name: str):
-        post(self.post_url, headers=self.headers,
-             json={'owner_id': self.player_id, 'name': name})
+        self.session.post(
+            self.post_url, json={"owner_id": self.player_id, "name": name}
+        )
 
     def delete(self):
-        delet(self.post_url, headers=self.headers,
-              params={'owner_id': self.owner_id})
-
-    def exists(self) -> bool:
-        warnings.warn(
-            'This are going to be deleted, and replaced with .exist',
-            PendingDeprecationWarning, stacklevel=2)
-        return self.exist
-
-
-class Mine(BaseClass):
-
-    def __str__(self):
-        data = self.get('name,lvl,tax')
-        return f"""
-Шахта *{data[0]}*
-
-*Размер:* {data[1]}
-*Налоги:* {data[2]:,}
-
-Выберите действие:
-    """
-
-    def create(self, name: str):
-        post(self.post_url, headers=self.headers,
-             json={"owner_id": self.player_id, 'name': name})
-
-    @property
-    def exist(self):
-        try:
-            return self.owner_id == int(self.player_id)
-        except:
-            pass
-        return False
-
-
-class Tunnel(BaseClass):
-
-    def __str__(self):
-        mine_id, tunnel_id, lvl, workers, eq, work = self.get(
-            'mine_id,id,lvl,workers,equipment,working')
-        return f"""
-Туннель № {f'{(mine_id - 100000) * tunnel_id:,}'.replace(',', '-')}
-_Внутренний номер {tunnel_id:,}_
-
-Работа: {'Приостановлена' if work == 0 else 'Идет полным ходом'}
-
-Глубина: {lvl} километров.
-Рабочие: {workers} человек.
-"""
+        self.session.delete(self.post_url, params={"owner_id": self.owner_id})
