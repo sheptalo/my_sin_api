@@ -35,4 +35,7 @@ class BaseClass:
         self.session.put(self.get_url, json={name: value})
 
     def __get(self, name):
-        return self.session.get(self.get_url + name).json()[0]
+        res = self.session.get(self.get_url + name).json()
+        if isinstance(res, list):
+            return res[0]
+        return res

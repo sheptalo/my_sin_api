@@ -1,7 +1,7 @@
 from requests import get
 
 from my_sin_api._base import BaseClass
-from my_sin_api._models import Player, Factory, Mine, Tunnel
+from my_sin_api._models import Player, Factory
 
 
 class SinApi:
@@ -26,9 +26,6 @@ class SinApi:
         return a(some_id, self.api_key, self.api_url, self.ssl_verify)
 
     # region Tegtory Functions
-    def mine(self, user_id):
-        """returns mine of given user."""
-        return Mine(user_id, self.api_key, self.api_url, self.ssl_verify)
 
     def player(self, user_id):
         """returns player of given user_id."""
@@ -37,10 +34,6 @@ class SinApi:
     def factory(self, owner_id):
         """returns factory of given owner."""
         return Factory(owner_id, self.api_key, self.api_url, self.ssl_verify)
-
-    def tunnel(self, tunnel_id):
-        """returns tunnel of given tunnel_id."""
-        return Tunnel(tunnel_id, self.api_key, self.api_url, self.ssl_verify)
 
     def find_factory(self, name):
         req = get(
